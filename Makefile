@@ -1,7 +1,7 @@
 COMP=-c
 
 CC=icc
-CCFLAGS= -Wall -g -lcgns
+CCFLAGS= -Wall -g -lcgns -lhdf5
 CCLOAD= $(CCFLAGS)
 
 EXEC=cgns2sparta
