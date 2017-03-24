@@ -1,7 +1,5 @@
-
 /* Converts a 2D cgns point based 2.4 to ascii format.
  * Author: Leonardo Motta */
-
 
 #include <stdio.h>
 #include <string.h>
@@ -37,7 +35,7 @@ int main(int argc, char * argv[]){
 /* Function that converts cgns to sparta code */
 void cgns2ascii(const char * filename){
 
-    int cg_file, nbases, nzones, nsections, ndataset, normallist, spaTyp;
+    int cg_file, nbases, nzones, nsections, ndataset, normallist, spaTyp, npe;
     int zoneid, baseid, index_sect, nbndry, iparent_flag, nbocos, normalindex[3];
 
     char zone_name[25];
@@ -52,7 +50,7 @@ void cgns2ascii(const char * filename){
     cgsize_t size[3],istart,iparentdata;
     BCType_t ibocotype;
     PointSetType_t iptset;
-    cgsize_t npts,normallistflag,end;
+    cgsize_t npts,normallistflag,end,ElementDataSize;
     DataType_t normaldatatype;
     
     FILE * f_points;
@@ -200,30 +198,45 @@ void cgns2ascii(const char * filename){
 
         if (itype == QUAD_4 || itype == MIXED){
 
-            /* If the elemnt is quad, I want the type to be 4 ok !? */
 
-            kindof = 4;
+            /* Declare our elemn connectivity vector */
+
             cgsize_t ielem[size[1]][4];
+
+
+            /* Put connectivity information in ielem */
+
             cg_elements_read( cg_file, baseid, zoneid, index_sect, ielem[0], &iparentdata);
 
 
             /* Output the connectivity to the file */
 
-            for (ele = 0; ele < end; ele++)
+            for (ele = 0; ele < end; ele++){
+
+                kindof = 4;
+
                 fprintf(f_connec,"%d %d %d %d %d %d\n",ele+1,kindof,(int)ielem[ele][0],(int)ielem[ele][1],(int)ielem[ele][2],(int)ielem[ele][3]);
+            }
 
         }else if (itype == TRI_3 || itype == MIXED){
 
-            /* If the elemnt is tri, I want the type to be 3 ok !? */
 
-            kindof = 3;
+            /* Declare our elemn connectivity vector */
+
             cgsize_t ielem[size[1]][3];
+
+
+            /* Put connectivity information in ielem */
+
             cg_elements_read( cg_file, baseid, zoneid, index_sect, ielem[0], &iparentdata);
 
 
             /* Output the connectivity to the file */
 
             for (ele = 0; ele < end; ele++)
+
+                kindof = 3;
+
                 fprintf(f_connec,"%d %d %d %d %d\n",ele+1,kindof,(int)ielem[ele][0],(int)ielem[ele][1],(int)ielem[ele][2]);
 
         }
