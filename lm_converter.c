@@ -1,5 +1,5 @@
 
-/* Converts a 2D cgns file to sparta code format. 
+/* Converts a 2D cgns point based 2.4 to ascii format.
  * Author: Leonardo Motta */
 
 
@@ -12,25 +12,30 @@
 
 
 /* Prototypes */
-void cgns2sparta(const char * filename);
+void  cgns2ascii(const char * filename);
 
 
 /* Main program */
-int main(){
+int main(int argc, char * argv[]){
 
-    char * filename = "simpleCoarseRectangle.cgns";
+    if (argc < 2) {    
+        printf("ERROR: One argument expected.\n");
+        exit(1);
+    }
+
+    char * filename = argv[1];
 
     printf("----------------------------------------------------------\n");
     printf(" ++ Reading mesh file: %s\n", filename);
     printf("----------------------------------------------------------\n\n");
 
-    cgns2sparta(filename);
+    cgns2ascii(filename);
 
 }
 
 
 /* Function that converts cgns to sparta code */
-void cgns2sparta(const char * filename){
+void cgns2ascii(const char * filename){
 
     int cg_file, nbases, nzones, nsections, ndataset, normallist, spaTyp;
     int zoneid, baseid, index_sect, nbndry, iparent_flag, nbocos, normalindex[3];
@@ -265,7 +270,7 @@ void cgns2sparta(const char * filename){
 
         cgsize_t ipnts[npts];
 
-        cg_boco_read( cg_file, baseid, zoneid, ib, ipnts, &normallist);
+        cg_boco_read(cg_file, baseid, zoneid, ib, ipnts, &normallist);
 
 
         /* Get boundary condition type from the user */
@@ -276,7 +281,9 @@ void cgns2sparta(const char * filename){
         printf("   - Supersonic Outlet : 2\n");
         printf("   - Euler Wall        : 3\n");
         printf("   - Internal FLUID    : 4\n");
+        printf("   - Symmetry          : 5\n");
         printf("===============================================\n");
+        printf("Please, input boundary condition type: ");
 
         scanf("%d",&spaTyp);
 
