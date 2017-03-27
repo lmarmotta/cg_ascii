@@ -4,7 +4,7 @@ CC=icc
 CCFLAGS= -Wall -g -lcgns -lhdf5
 CCLOAD= $(CCFLAGS)
 
-EXEC=ascii
+EXEC=c_ascii
 
 OBJ=\
 	lm_converter.o

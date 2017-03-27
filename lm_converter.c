@@ -241,15 +241,13 @@ void cgns2ascii(const char * filename){
     printf(" ++ Reading Boundary conditions...\n ");
     printf("----------------------------------------------------------\n\n");
 
+    /* Get the number of boundary conditions */
     cg_nbocos( cg_file, baseid, zoneid, &nbocos);
 
     printf(" + Total number of B.Cs : %d\n", nbocos);
 
-
     /* Now lets loop through all boundary conditions man ! */
-
     int ib;
-
     for (ib=1; ib <= nbocos; ib++){
 
         cg_goto(cg_file, baseid,"Zone_t",1,"ZoneBC_t",1,"BC_t",ib,"end");
@@ -258,25 +256,23 @@ void cgns2ascii(const char * filename){
         cg_boco_info( cg_file, baseid, zoneid, ib, boconame, &ibocotype,
                 &iptset,&npts,normalindex,&normallistflag,&normaldatatype,&ndataset);
 
+        /* Check pointList */ 
         if (iptset != PointList){
-
-            printf("\nError.  For this program, BCs must be set up as PointList type %s\n",PointSetTypeName[iptset]);
+            printf("\nError.  For this program, BCs must be set up as PointList type %s\n",
+                    PointSetTypeName[iptset]);
             exit(1);
         }
-
 
         printf("  + BC number: %i\n",ib);
         printf("  + name= %s\n",boconame);
         printf("  + type= %s\n",BCTypeName[ibocotype]);
-        printf("  + no of elements= %i\n\n",(int)npts);
+        printf("  + no of points= %i\n\n",(int)npts);
 
         cgsize_t ipnts[npts];
 
         cg_boco_read(cg_file, baseid, zoneid, ib, ipnts, &normallist);
 
-
         /* Get boundary condition type from the user */
-
         printf("\n===============================================\n");
         printf(" Please, select the type of B.C for: %s \n",boconame);
         printf("   - Supersonic Inlet  : 1\n");
@@ -286,18 +282,13 @@ void cgns2ascii(const char * filename){
         printf("   - Symmetry          : 5\n");
         printf("===============================================\n");
         printf("Please, input boundary condition type: ");
-
         scanf("%d",&spaTyp);
 
-
-        /* I dont want the fluid elemnets in my file ! */
-
+        /* Let's output the boundary condition points */
         if (spaTyp != 4){
-
             int i;
-
-            for ( i = 0; i < (int)npts-1; i++) {
-                fprintf(f_boundc,"%d %d %d\n", spaTyp,ipnts[i],ipnts[i+1]);
+            for ( i = 1; i < (int)npts; i++) {
+                fprintf(f_boundc,"%d %d\n", spaTyp,(int)ipnts[i]);
             }
         }
     }
