@@ -196,7 +196,7 @@ void cgns2ascii(const char * filename){
          * the mesh will have triangles and/or quad elements. Cheer up it 
          * works fine. */
 
-        if (itype == QUAD_4 || itype == MIXED){
+        if (itype == QUAD_4){
 
 
             /* Declare our elemn connectivity vector */
@@ -218,7 +218,7 @@ void cgns2ascii(const char * filename){
                 fprintf(f_connec,"%d %d %d %d %d %d\n",ele+1,kindof,(int)ielem[ele][0],(int)ielem[ele][1],(int)ielem[ele][2],(int)ielem[ele][3]);
             }
 
-        }else if (itype == TRI_3 || itype == MIXED){
+        }else if (itype == TRI_3){
 
 
             /* Declare our elemn connectivity vector */
@@ -239,6 +239,9 @@ void cgns2ascii(const char * filename){
 
                 fprintf(f_connec,"%d %d %d %d %d\n",ele+1,kindof,(int)ielem[ele][0],(int)ielem[ele][1],(int)ielem[ele][2]);
 
+        }else if (itype == MIXED){
+
+            cgsize_t ielem[size[1]][4];
         }
     } 
 
@@ -270,8 +273,7 @@ void cgns2ascii(const char * filename){
 
         if (iptset != PointList){
 
-            printf("\nError.  For this program, BCs must be set up as PointList type %s\n",
-            PointSetTypeName[iptset]);
+            printf("\nError.  For this program, BCs must be set up as PointList type %s\n",PointSetTypeName[iptset]);
             exit(1);
         }
 
@@ -301,7 +303,7 @@ void cgns2ascii(const char * filename){
         scanf("%d",&spaTyp);
 
 
-        /* I dont want the fluid elemnets in my fucking file ! */
+        /* I dont want the fluid elemnets in my file ! */
 
         if (spaTyp != 4){
 
