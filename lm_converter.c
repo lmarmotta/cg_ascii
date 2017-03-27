@@ -36,17 +36,15 @@ int main(int argc, char * argv[]){
 void cgns2ascii(const char * filename){
 
     int cg_file, nbases, nzones, nsections, ndataset, normallist, spaTyp, npe;
-    int zoneid, baseid, index_sect, nbndry, iparent_flag, nbocos, normalindex[3];
+    int zoneid, baseid, index_sect, nbndry, iparent_flag, normalindex[3];
 
     char zone_name[25];
     char sectionname[30];
-    char boconame[33];
 
     /* CGNS datatypes */
     ElementType_t itype, iend;
     GridLocation_t igr;
     cgsize_t size[3],istart,iparentdata;
-    BCType_t ibocotype;
     PointSetType_t iptset;
     cgsize_t npts,normallistflag,end,ElementDataSize;
     DataType_t normaldatatype;
@@ -174,9 +172,9 @@ void cgns2ascii(const char * filename){
         printf("  + section type=%s\n",ElementTypeName[itype]);
         printf("  + istart,end=%i, %i\n\n",(int)istart,(int)end);
 
-        /* Check if the elemnt type is two dimensional, here I am considering 
-         * the mesh will have triangles and/or quad elements. Cheer up it 
-         * works fine. */
+        /* Here we will write the connectivity information. It's important to point out
+         * that this convertion code works for 2D grids only. This means that any BAR_2
+         * element is boundary and any MIXED, TRI_3 or QUAD_4 is interior element */
 
         if (itype == QUAD_4){
 
@@ -229,71 +227,39 @@ void cgns2ascii(const char * filename){
                             (int)ielem[ele][0],(int)ielem[ele][1],(int)ielem[ele][2],(int)ielem[ele][3]);
                 }
             }
-        } 
-    }
+        }else if (itype == BAR_2){
 
-    
-    /* Now that we have (almost) our connectivity, lets get the last information
-     * that is useful for us, the B.Cs. This procedure in Carlos code is very el
-     * aborated and well done so lets try to do our own version here. */
+            int spaTyp;
 
-    printf("----------------------------------------------------------\n");
-    printf(" ++ Reading Boundary conditions...\n ");
-    printf("----------------------------------------------------------\n\n");
+            /* Get boundary condition type from the user */
+            printf("\n===============================================\n");
+            printf(" Please, select the type of B.C for: %s \n",sectionname);
+            printf("   - Supersonic Inlet  : 1\n");
+            printf("   - Supersonic Outlet : 2\n");
+            printf("   - Euler Wall        : 3\n");
+            printf("   - Internal FLUID    : 4\n");
+            printf("   - Symmetry          : 5\n");
+            printf("===============================================\n");
+            printf("Please, input boundary condition type: ");
+            scanf("%d",&spaTyp);
 
-    /* Get the number of boundary conditions */
-    cg_nbocos( cg_file, baseid, zoneid, &nbocos);
+            /* Discover the number of B.Cs */
+            int bc_size = (int)end - (int)istart;
 
-    printf(" + Total number of B.Cs : %d\n", nbocos);
+            /* Declare our elemn connectivity vector */
+            cgsize_t ielem[bc_size][2];
 
-    /* Now lets loop through all boundary conditions man ! */
-    int ib;
-    for (ib=1; ib <= nbocos; ib++){
+            /* Put connectivity information in ielem */
+            cg_elements_read( cg_file, baseid, zoneid, index_sect, ielem[0], &iparentdata);
 
-        cg_goto(cg_file, baseid,"Zone_t",1,"ZoneBC_t",1,"BC_t",ib,"end");
-        cg_gridlocation_read(&igr);
-
-        cg_boco_info( cg_file, baseid, zoneid, ib, boconame, &ibocotype,
-                &iptset,&npts,normalindex,&normallistflag,&normaldatatype,&ndataset);
-
-        /* Check pointList */ 
-        if (iptset != PointList){
-            printf("\nError.  For this program, BCs must be set up as PointList type %s\n",
-                    PointSetTypeName[iptset]);
-            exit(1);
-        }
-
-        printf("  + BC number: %i\n",ib);
-        printf("  + name= %s\n",boconame);
-        printf("  + type= %s\n",BCTypeName[ibocotype]);
-        printf("  + no of points= %i\n\n",(int)npts);
-
-        cgsize_t ipnts[npts];
-
-        cg_boco_read(cg_file, baseid, zoneid, ib, ipnts, &normallist);
-
-        /* Get boundary condition type from the user */
-        printf("\n===============================================\n");
-        printf(" Please, select the type of B.C for: %s \n",boconame);
-        printf("   - Supersonic Inlet  : 1\n");
-        printf("   - Supersonic Outlet : 2\n");
-        printf("   - Euler Wall        : 3\n");
-        printf("   - Internal FLUID    : 4\n");
-        printf("   - Symmetry          : 5\n");
-        printf("===============================================\n");
-        printf("Please, input boundary condition type: ");
-        scanf("%d",&spaTyp);
-
-        /* Let's output the boundary condition points */
-        if (spaTyp != 4){
-            int i;
-            for ( i = 1; i < (int)npts; i++) {
-                fprintf(f_boundc,"%d %d\n", spaTyp,(int)ipnts[i]);
+            /* Output the connectivity to the file */
+            for (ele = 1; ele <=  bc_size; ele++){
+                fprintf(f_boundc,"%d %d %d\n",spaTyp,
+                        (int)ielem[ele][0],(int)ielem[ele][1]);
             }
         }
     }
-
-
+    
     cg_close (cg_file);
 
     free(x_coord);
