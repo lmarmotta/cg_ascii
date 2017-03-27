@@ -42,9 +42,7 @@ void cgns2ascii(const char * filename){
     char sectionname[30];
     char boconame[33];
 
-
     /* CGNS datatypes */
-
     ElementType_t itype, iend;
     GridLocation_t igr;
     cgsize_t size[3],istart,iparentdata;
@@ -59,7 +57,6 @@ void cgns2ascii(const char * filename){
 
 
     /* Openning our mesh files ...*/
-
     f_points = fopen("pointCord.dat","w+");
     f_connec = fopen("elemnConn.dat","w+");
     f_boundc = fopen("elemnBonc.dat","w+");
@@ -91,13 +88,9 @@ void cgns2ascii(const char * filename){
         printf("  + The number of bases in the file is: %d\n", nbases);
     }
 
-
     /* Now lets get the number of zones in the data-tree. */
-
     for ( baseid = 1; baseid <= nbases; baseid++ ){
-    
         cg_nzones( cg_file, baseid, &nzones );
-
         if ( nzones > 1 ) {
           printf("CGNS file nzones greater than one is not supported.\n");
           exit(1);
@@ -130,9 +123,9 @@ void cgns2ascii(const char * filename){
     zoneid = zoneid - 1;
 
 
-    /* Now we will get the node coordnates of the mesh so lets allocate some arrays
-     * to hold useful information such as connectivity and node coordnates. Lets st
-     * art with the node coordnates. */ 
+    /* Now we will get the node coordinates of the mesh so lets allocate some arrays
+     * to hold useful information such as connectivity and node coordinates. Lets st
+     * art with the node coordinates. */ 
 
     double * x_coord = (double*)malloc(size[0]*sizeof(double));
     double * y_coord = (double*)malloc(size[0]*sizeof(double));
@@ -144,27 +137,21 @@ void cgns2ascii(const char * filename){
     printf("----------------------------------------------------------\n\n");
 
 
-    /* Lets get the node coordnates */
-
+    /* Lets get the node coordinates */
     cg_coord_read( cg_file, baseid, zoneid, "CoordinateX", RealDouble, &start, &size[0], x_coord);
     cg_coord_read( cg_file, baseid, zoneid, "CoordinateY", RealDouble, &start, &size[0], y_coord);
 
 
     /* Writing point data */
-
     int coord;
-
     fprintf(f_points,"%d\n",size[0]);
-
     for ( coord = 0; coord<size[0]; coord++)
         fprintf(f_points,"%d %.17e %.17e\n",coord+1,x_coord[coord],y_coord[coord]);
 
     printf("  + Nodes were red succesfully ! \n\n ");
 
-
     /* If structured grids were disered the problem was solved but there is no
      * free lunch for us so lets get the boundary conditions */ 
-
     printf("----------------------------------------------------------\n");
     printf(" ++ Reading element connectivity...\n ");
     printf("----------------------------------------------------------\n\n");
@@ -173,12 +160,8 @@ void cgns2ascii(const char * filename){
 
     printf(" + Number of sections found in the mesh: %i\n",nsections);
 
-
     /* Lets loop through sections and find out our element connectivity */
-
-    int kindof;
-
-    int ele;
+    int kindof, ele;
     fprintf(f_connec,"%d\n",size[1]);
 
     for (index_sect=1; index_sect <= nsections; index_sect++){
@@ -191,59 +174,63 @@ void cgns2ascii(const char * filename){
         printf("  + section type=%s\n",ElementTypeName[itype]);
         printf("  + istart,end=%i, %i\n\n",(int)istart,(int)end);
 
-
         /* Check if the elemnt type is two dimensional, here I am considering 
          * the mesh will have triangles and/or quad elements. Cheer up it 
          * works fine. */
 
         if (itype == QUAD_4){
 
-
             /* Declare our elemn connectivity vector */
-
             cgsize_t ielem[size[1]][4];
 
-
             /* Put connectivity information in ielem */
-
             cg_elements_read( cg_file, baseid, zoneid, index_sect, ielem[0], &iparentdata);
 
-
             /* Output the connectivity to the file */
-
             for (ele = 0; ele < end; ele++){
-
                 kindof = 4;
-
-                fprintf(f_connec,"%d %d %d %d %d %d\n",ele+1,kindof,(int)ielem[ele][0],(int)ielem[ele][1],(int)ielem[ele][2],(int)ielem[ele][3]);
+                fprintf(f_connec,"%d %d %d %d %d %d\n",ele+1,kindof,
+                        (int)ielem[ele][0],(int)ielem[ele][1],(int)ielem[ele][2],(int)ielem[ele][3]);
             }
 
         }else if (itype == TRI_3){
 
-
             /* Declare our elemn connectivity vector */
-
             cgsize_t ielem[size[1]][3];
 
-
             /* Put connectivity information in ielem */
-
             cg_elements_read( cg_file, baseid, zoneid, index_sect, ielem[0], &iparentdata);
 
-
             /* Output the connectivity to the file */
-
-            for (ele = 0; ele < end; ele++)
-
+            for (ele = 0; ele < end; ele++){
                 kindof = 3;
-
-                fprintf(f_connec,"%d %d %d %d %d\n",ele+1,kindof,(int)ielem[ele][0],(int)ielem[ele][1],(int)ielem[ele][2]);
+                fprintf(f_connec,"%d %d %d %d %d\n",ele+1,kindof,
+                        (int)ielem[ele][0],(int)ielem[ele][1],(int)ielem[ele][2]);
+            }
 
         }else if (itype == MIXED){
 
+            /* Declare our elemn connectivity vector */
             cgsize_t ielem[size[1]][4];
-        }
-    } 
+
+            /* Put connectivity information in ielem */
+            cg_elements_read( cg_file, baseid, zoneid, index_sect, ielem[0], &iparentdata);
+            for (ele = 0; ele < end; ele++){
+
+                /* If the element is mixed, cgns will give 5 as value for this type of element */
+                if ((int)ielem[ele][0] == 5){
+                    kindof = 3;
+                    fprintf(f_connec,"%d %d %d %d %d\n",ele+1,kindof,
+                            (int)ielem[ele][1],(int)ielem[ele][2],(int)ielem[ele][3]);
+
+                } else {
+                    kindof = 4;
+                    fprintf(f_connec,"%d %d %d %d %d %d\n",ele+1,kindof,
+                            (int)ielem[ele][0],(int)ielem[ele][1],(int)ielem[ele][2],(int)ielem[ele][3]);
+                }
+            }
+        } 
+    }
 
     
     /* Now that we have (almost) our connectivity, lets get the last information
