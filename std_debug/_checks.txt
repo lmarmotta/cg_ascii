@@ -1,0 +1,9 @@
+[ ] - TRI Rectangle
+[ ] - TRI Circle
+[ ] - TRI NACA0012
+[ ] - QUAD Rectangle
+[ ] - QUAD Circle
+[ ] - QUAD NACA0012
+[ ] - MIXED Rectangle
+[ ] - MIXED Circle
+[ ] - MIXED NACA0012
