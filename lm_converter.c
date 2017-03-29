@@ -1,6 +1,10 @@
 /* Converts a 2D cgns point based 2.4 to ascii format.
  * Author: Leonardo Motta */
 
+/* TO DO: - Deal more elegantly with MIXED elements.
+ *          My solution is very MacGyver like.
+ *        - Count the number of B.Cs.             */
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -59,24 +63,19 @@ void cgns2ascii(const char * filename){
     f_connec = fopen("elemnConn.dat","w+");
     f_boundc = fopen("elemnBonc.dat","w+");
 
-
     printf("----------------------------------------------------------\n");
     printf(" ++ Reading basic mesh data...\n ");
     printf("----------------------------------------------------------\n\n");
 
-
     /* Openning the cgnsfile. In the mid-level library, all native cgns functio
      * ns are responsable for navigate through the data tree and get everything
      * I need. */
-
     if ( cg_open( filename, CG_MODE_READ, &cg_file ) ) cg_error_exit();
-
 
     /* Now lets get the number of bases in the mesh. Until now I dont know exac
      * ly what these bases actually are but I know that for my simple code
      * I dont need or want more than one of these, so lets check if these are 
      * one. */
-
     cg_nbases( cg_file, &nbases );
 
     if ( nbases > 1 ) {
@@ -95,18 +94,14 @@ void cgns2ascii(const char * filename){
         }
     }
 
-
     /* Baseid is being incremented at the end of the loop since it is a very 
      * important variable, we need it to stay as the value given by cg_zones 
      * function. */
-
     baseid = baseid - 1;
-
 
     /* Now its big time for us ! We will get some very nice grid information !
      * This basic information will be usefull for us later when building the 
      * arrays that will support the mesh */
-
     for ( zoneid = 1; zoneid <= nzones; zoneid++ ){
 
         cg_zone_read( cg_file, baseid, zoneid, zone_name, size );
@@ -120,11 +115,9 @@ void cgns2ascii(const char * filename){
 
     zoneid = zoneid - 1;
 
-
     /* Now we will get the node coordinates of the mesh so lets allocate some arrays
      * to hold useful information such as connectivity and node coordinates. Lets st
      * art with the node coordinates. */ 
-
     double * x_coord = (double*)malloc(size[0]*sizeof(double));
     double * y_coord = (double*)malloc(size[0]*sizeof(double));
 
@@ -134,11 +127,9 @@ void cgns2ascii(const char * filename){
     printf(" ++ Reading node coordnates...\n ");
     printf("----------------------------------------------------------\n\n");
 
-
     /* Lets get the node coordinates */
     cg_coord_read( cg_file, baseid, zoneid, "CoordinateX", RealDouble, &start, &size[0], x_coord);
     cg_coord_read( cg_file, baseid, zoneid, "CoordinateY", RealDouble, &start, &size[0], y_coord);
-
 
     /* Writing point data */
     int coord;
@@ -159,12 +150,10 @@ void cgns2ascii(const char * filename){
     printf(" + Number of sections found in the mesh: %i\n",nsections);
 
     /* Lets loop through sections and find out our element connectivity */
-
     int ele;
     fprintf(f_connec,"%d\n",size[1]);
 
     for (index_sect=1; index_sect <= nsections; index_sect++){
-
         cg_section_read( cg_file, baseid, zoneid, index_sect, sectionname, 
                          &itype, &istart, &end, &nbndry, &iparent_flag);
 
@@ -268,6 +257,10 @@ void cgns2ascii(const char * filename){
             }
         }
     }
+
+    printf("\n===============================================\n");
+    printf(" ++ WARNING: Dont't forget the B.C numbering. ++\n");
+    printf("\n===============================================\n");
     
     cg_close (cg_file);
 
