@@ -34,5 +34,5 @@
 
 # Output files
 *.dat
-ascii
+c_ascii
 *.swp

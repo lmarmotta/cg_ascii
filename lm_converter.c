@@ -159,7 +159,8 @@ void cgns2ascii(const char * filename){
     printf(" + Number of sections found in the mesh: %i\n",nsections);
 
     /* Lets loop through sections and find out our element connectivity */
-    int kindof, ele;
+
+    int ele;
     fprintf(f_connec,"%d\n",size[1]);
 
     for (index_sect=1; index_sect <= nsections; index_sect++){
@@ -173,21 +174,21 @@ void cgns2ascii(const char * filename){
         printf("  + istart,end=%i, %i\n\n",(int)istart,(int)end);
 
         /* Here we will write the connectivity information. It's important to point out
-         * that this convertion code works for 2D grids only. This means that any BAR_2
+         * that this convertion code works for 2D grids only. This means that, any BAR_2
          * element is boundary and any MIXED, TRI_3 or QUAD_4 is interior element */
 
         if (itype == QUAD_4){
 
             /* Declare our elemn connectivity vector */
             cgsize_t ielem[size[1]][4];
+            int n_vol = (int)size[1];
 
             /* Put connectivity information in ielem */
             cg_elements_read( cg_file, baseid, zoneid, index_sect, ielem[0], &iparentdata);
 
             /* Output the connectivity to the file */
-            for (ele = 0; ele < end; ele++){
-                kindof = 4;
-                fprintf(f_connec,"%d %d %d %d %d %d\n",ele+1,kindof,
+            for (ele = 0; ele < n_vol; ele++){
+                fprintf(f_connec,"%d %d %d %d %d %d\n",ele+1,4,
                         (int)ielem[ele][0],(int)ielem[ele][1],(int)ielem[ele][2],(int)ielem[ele][3]);
             }
 
@@ -195,36 +196,45 @@ void cgns2ascii(const char * filename){
 
             /* Declare our elemn connectivity vector */
             cgsize_t ielem[size[1]][3];
+            int n_vol = (int)size[1];
 
             /* Put connectivity information in ielem */
             cg_elements_read( cg_file, baseid, zoneid, index_sect, ielem[0], &iparentdata);
 
             /* Output the connectivity to the file */
-            for (ele = 0; ele < end; ele++){
-                kindof = 3;
-                fprintf(f_connec,"%d %d %d %d %d\n",ele+1,kindof,
+            for (ele = 0; ele < n_vol; ele++){
+                fprintf(f_connec,"%d %d %d %d %d\n",ele+1,3,
                         (int)ielem[ele][0],(int)ielem[ele][1],(int)ielem[ele][2]);
             }
 
         }else if (itype == MIXED){
 
+            /* Note: The way cgns deals with MIXED elements is, until now, very
+             * obscure for me. In the manual they tell us that one extra integer
+             * is used up front the ielem array in order to tell me the element 
+             * type. It worked perfectly fine for TRI_3 elements but, for QUAD_4
+             * one strange 7 appears in the diagonal. I fiexd it in a very un-el
+             * elegant way so, any suggestions are welcome ! */
+
             /* Declare our elemn connectivity vector */
             cgsize_t ielem[size[1]][4];
+            int n_vol = (int)size[1];
 
             /* Put connectivity information in ielem */
             cg_elements_read( cg_file, baseid, zoneid, index_sect, ielem[0], &iparentdata);
-            for (ele = 0; ele < end; ele++){
+
+            int j = 0; 
+
+            for (ele = 0; ele < n_vol; ele++){
 
                 /* If the element is mixed, cgns will give 5 as value for this type of element */
                 if ((int)ielem[ele][0] == 5){
-                    kindof = 3;
-                    fprintf(f_connec,"%d %d %d %d %d\n",ele+1,kindof,
+                    fprintf(f_connec,"%d %d %d %d %d\n",ele+1,3,
                             (int)ielem[ele][1],(int)ielem[ele][2],(int)ielem[ele][3]);
-
                 } else {
-                    kindof = 4;
-                    fprintf(f_connec,"%d %d %d %d %d %d\n",ele+1,kindof,
-                            (int)ielem[ele][0],(int)ielem[ele][1],(int)ielem[ele][2],(int)ielem[ele][3]);
+                    fprintf(f_connec,"%d %d %d %d %d %d\n",ele+1,4,
+                            (int)ielem[ele][j+1],(int)ielem[ele][j+2],(int)ielem[ele][j+3],(int)ielem[ele][j+4]);
+                    j = j + 1;
                 }
             }
         }else if (itype == BAR_2){
@@ -234,11 +244,10 @@ void cgns2ascii(const char * filename){
             /* Get boundary condition type from the user */
             printf("\n===============================================\n");
             printf(" Please, select the type of B.C for: %s \n",sectionname);
-            printf("   - Supersonic Inlet  : 1\n");
-            printf("   - Supersonic Outlet : 2\n");
-            printf("   - Euler Wall        : 3\n");
-            printf("   - Internal FLUID    : 4\n");
-            printf("   - Symmetry          : 5\n");
+            printf("   - Farfield          : 1\n");
+            printf("   - Outlet            : 2\n");
+            printf("   - Inviscid Wall     : 3\n");
+            printf("   - Symmetry          : 4\n");
             printf("===============================================\n");
             printf("Please, input boundary condition type: ");
             scanf("%d",&spaTyp);
