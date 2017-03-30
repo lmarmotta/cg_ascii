@@ -14,19 +14,11 @@
 
 #include "cgnslib.h"
 
-/* Holds the boundary conditions */
-typedef struct e_data{
-    int  bc_size;
-    char bc_name[20];
-} e_data;
-
 /* Prototypes */
-void cgns2ascii(const char * filename, struct e_data * bc_ref);
+void cgns2ascii(const char * filename);
 
 /* Main program */
 int main(int argc, char * argv[]){
-
-    struct e_data * bc_ref = NULL;
 
     if (argc < 2) {    
         printf("ERROR: One argument expected.\n");
@@ -39,14 +31,14 @@ int main(int argc, char * argv[]){
     printf(" ++ Reading mesh file: %s\n", filename);
     printf("----------------------------------------------------------\n\n");
 
-    cgns2ascii(filename,bc_ref);
+    cgns2ascii(filename);
 
     return 0;
 }
 
 
 /* Function that converts cgns to sparta code */
-void cgns2ascii(const char * filename, struct e_data * bc_ref){
+void cgns2ascii(const char * filename){
 
     int cg_file, nbases, nzones, nsections, ndataset;
     int zoneid, baseid, index_sect, nbndry, iparent_flag, normalindex[3];
@@ -159,9 +151,6 @@ void cgns2ascii(const char * filename, struct e_data * bc_ref){
 
     printf(" + Total number of B.Cs : %d\n", nbocos);
 
-    /* This vector will store the number of bcs */
-    bc_ref = malloc(nbocos*sizeof(bc_ref));
-
     int ib;
 
     /* Loop through B.Cs and get the size of then */
@@ -177,9 +166,6 @@ void cgns2ascii(const char * filename, struct e_data * bc_ref){
             PointSetTypeName[iptset]);
             exit(1);
         }
-
-        bc_ref[ib-1].bc_size = (int)npts;
-        strcpy(bc_ref[ib-1].bc_name,boconame);
     }
 
     /* If structured grids were disered the problem was solved but there is no
@@ -273,8 +259,6 @@ void cgns2ascii(const char * filename, struct e_data * bc_ref){
 
             int spaTyp;
 
-            printf("\n\n%s\n",bc_ref[index_sect-1].bc_name);
-
             /* Get boundary condition type from the user */
             printf("\n===============================================\n");
             printf(" Please, select the type of B.C for: %s \n",sectionname);
@@ -287,7 +271,7 @@ void cgns2ascii(const char * filename, struct e_data * bc_ref){
             scanf("%d",&spaTyp);
 
             /* Discover the number of B.Cs */
-            int bc_size = bc_ref[index_sect-1].bc_size;
+            uint bc_size = end - istart + 1;
 
             /* Declare our elemn connectivity vector */
             cgsize_t ielem[bc_size][2];
@@ -309,7 +293,6 @@ void cgns2ascii(const char * filename, struct e_data * bc_ref){
 
     free(x_coord);
     free(y_coord);
-    free(bc_ref);
 
     cg_close(cg_file);
 }
