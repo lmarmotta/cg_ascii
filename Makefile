@@ -1,6 +1,6 @@
 COMP=-c
 
-CC=icc
+CC=gcc
 CCFLAGS= -Wall -g -lcgns -lhdf5
 CCLOAD= $(CCFLAGS)
 

@@ -3,7 +3,9 @@
 
 /* TO DO: - Deal more elegantly with MIXED elements.
  *          My solution is very MacGyver like.
- *        - Count the number of B.Cs.             */
+ *        - Count the number of B.Cs.
+ *        - Resolve Bug with BC count.            
+ *        - Resolve Segmentation Fault             */
 
 #include <stdio.h>
 #include <string.h>
@@ -12,13 +14,19 @@
 
 #include "cgnslib.h"
 
+/* Holds the boundary conditions */
+typedef struct e_data{
+    int  bc_size;
+    char bc_name[20];
+} e_data;
 
 /* Prototypes */
-void  cgns2ascii(const char * filename);
-
+void cgns2ascii(const char * filename, struct e_data * bc_ref);
 
 /* Main program */
 int main(int argc, char * argv[]){
+
+    struct e_data * bc_ref = NULL;
 
     if (argc < 2) {    
         printf("ERROR: One argument expected.\n");
@@ -31,32 +39,32 @@ int main(int argc, char * argv[]){
     printf(" ++ Reading mesh file: %s\n", filename);
     printf("----------------------------------------------------------\n\n");
 
-    cgns2ascii(filename);
+    cgns2ascii(filename,bc_ref);
 
+    return 0;
 }
 
 
 /* Function that converts cgns to sparta code */
-void cgns2ascii(const char * filename){
+void cgns2ascii(const char * filename, struct e_data * bc_ref){
 
-    int cg_file, nbases, nzones, nsections, ndataset, normallist, spaTyp, npe;
+    int cg_file, nbases, nzones, nsections, ndataset;
     int zoneid, baseid, index_sect, nbndry, iparent_flag, normalindex[3];
 
     char zone_name[25];
     char sectionname[30];
 
     /* CGNS datatypes */
-    ElementType_t itype, iend;
+    ElementType_t itype;
     GridLocation_t igr;
     cgsize_t size[3],istart,iparentdata;
     PointSetType_t iptset;
-    cgsize_t npts,normallistflag,end,ElementDataSize;
+    cgsize_t npts,normallistflag,end;
     DataType_t normaldatatype;
     
     FILE * f_points;
     FILE * f_connec;
     FILE * f_boundc;
-
 
     /* Openning our mesh files ...*/
     f_points = fopen("pointCord.dat","w+");
@@ -139,8 +147,43 @@ void cgns2ascii(const char * filename){
 
     printf("  + Nodes were red succesfully ! \n\n ");
 
+    printf("----------------------------------------------------------\n");
+    printf(" ++ Reading Boundary conditions...\n ");
+    printf("----------------------------------------------------------\n\n");
+
+    int nbocos;
+    char boconame[30];
+    BCType_t ibocotype;
+
+    cg_nbocos( cg_file, baseid, zoneid, &nbocos);
+
+    printf(" + Total number of B.Cs : %d\n", nbocos);
+
+    /* This vector will store the number of bcs */
+    bc_ref = malloc(nbocos*sizeof(bc_ref));
+
+    int ib;
+
+    /* Loop through B.Cs and get the size of then */
+    for (ib=1; ib <= nbocos; ib++){
+
+        cg_goto(cg_file, baseid,"Zone_t",1,"ZoneBC_t",1,"BC_t",ib,"end");
+        cg_gridlocation_read(&igr);
+        cg_boco_info( cg_file, baseid, zoneid, ib, boconame, &ibocotype,
+                &iptset,&npts,normalindex,&normallistflag,&normaldatatype,&ndataset);
+
+        if (iptset != PointList){
+            printf("\nError.  For this program, BCs must be set up as PointList type %s\n",
+            PointSetTypeName[iptset]);
+            exit(1);
+        }
+
+        bc_ref[ib-1].bc_size = (int)npts;
+        strcpy(bc_ref[ib-1].bc_name,boconame);
+    }
+
     /* If structured grids were disered the problem was solved but there is no
-     * free lunch for us so lets get the boundary conditions */ 
+     * free lunch for us so lets get element connectivity */
     printf("----------------------------------------------------------\n");
     printf(" ++ Reading element connectivity...\n ");
     printf("----------------------------------------------------------\n\n");
@@ -230,6 +273,8 @@ void cgns2ascii(const char * filename){
 
             int spaTyp;
 
+            printf("\n\n%s\n",bc_ref[index_sect-1].bc_name);
+
             /* Get boundary condition type from the user */
             printf("\n===============================================\n");
             printf(" Please, select the type of B.C for: %s \n",sectionname);
@@ -242,7 +287,7 @@ void cgns2ascii(const char * filename){
             scanf("%d",&spaTyp);
 
             /* Discover the number of B.Cs */
-            int bc_size = (int)end - (int)istart;
+            int bc_size = bc_ref[index_sect-1].bc_size;
 
             /* Declare our elemn connectivity vector */
             cgsize_t ielem[bc_size][2];
@@ -251,24 +296,20 @@ void cgns2ascii(const char * filename){
             cg_elements_read( cg_file, baseid, zoneid, index_sect, ielem[0], &iparentdata);
 
             /* Output the connectivity to the file */
-            for (ele = 1; ele <=  bc_size; ele++){
+            for (ele = 0; ele < bc_size; ele++){
                 fprintf(f_boundc,"%d %d %d\n",spaTyp,
                         (int)ielem[ele][0],(int)ielem[ele][1]);
             }
         }
     }
 
-    printf("\n===============================================\n");
-    printf(" ++ WARNING: Dont't forget the B.C numbering. ++\n");
-    printf("\n===============================================\n");
-    
-    cg_close (cg_file);
-
-    free(x_coord);
-    free(y_coord);
-
     fclose(f_points);
     fclose(f_connec);
     fclose(f_boundc);
 
+    free(x_coord);
+    free(y_coord);
+    free(bc_ref);
+
+    cg_close(cg_file);
 }
