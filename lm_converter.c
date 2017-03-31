@@ -180,6 +180,7 @@ void cgns2ascii(const char * filename){
 
     /* Lets loop through sections and find out our element connectivity */
     int ele;
+    int zero = 0;
     fprintf(f_connec,"%d\n",size[1]);
 
     for (index_sect=1; index_sect <= nsections; index_sect++){
@@ -221,8 +222,8 @@ void cgns2ascii(const char * filename){
 
             /* Output the connectivity to the file */
             for (ele = 0; ele < n_vol; ele++){
-                fprintf(f_connec,"%d %d %d %d %d\n",ele+1,3,
-                        (int)ielem[ele][0],(int)ielem[ele][1],(int)ielem[ele][2]);
+                fprintf(f_connec,"%d %d %d %d %d %d\n",ele+1,3,
+                        (int)ielem[ele][0],(int)ielem[ele][1],(int)ielem[ele][2],zero);
             }
 
         }else if (itype == MIXED){
@@ -247,8 +248,8 @@ void cgns2ascii(const char * filename){
 
                 /* If the element is mixed, cgns will give 5 as value for this type of element */
                 if ((int)ielem[ele][0] == 5){
-                    fprintf(f_connec,"%d %d %d %d %d\n",ele+1,3,
-                            (int)ielem[ele][1],(int)ielem[ele][2],(int)ielem[ele][3]);
+                    fprintf(f_connec,"%d %d %d %d %d %d\n",ele+1,3,
+                            (int)ielem[ele][1],(int)ielem[ele][2],(int)ielem[ele][3],zero);
                 } else {
                     fprintf(f_connec,"%d %d %d %d %d %d\n",ele+1,4,
                             (int)ielem[ele][j+1],(int)ielem[ele][j+2],(int)ielem[ele][j+3],(int)ielem[ele][j+4]);
