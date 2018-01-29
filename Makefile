@@ -25,6 +25,3 @@ clean:
 
 .c.o:
 	$(CC) $(COMP) $(CCFLAGS) $*.c 
-
-
-
