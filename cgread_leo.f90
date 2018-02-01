@@ -39,7 +39,7 @@
         implicit none
 !
         integer(kind=4) :: Cdim, Pdim, Idim, ier, count
-        integer(kind=4) :: cg, base, zone, ZoneType
+        integer(kind=4) :: cg, base, zone, ZoneType, nelem, npe
         integer(kind=4) :: nbases, nzones, ncoords, nsections 
         integer(kind=4) :: i, n, sect, nbndry, type, parent_flag
 !
