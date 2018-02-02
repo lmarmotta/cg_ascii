@@ -34,6 +34,39 @@
 !
 ! ------------------------------------------------------------------------------
 !
+!        subroutine BHDF_READ_RESTART: 
+!
+!       This subroutine receives a vector of properties and reads it in
+!       the same way an in house code would.
+!
+        subroutine bhdf_read_restart
+        use CGNS
+        use HDF5
+        implicit none
+
+        end subroutine bhdf_read_restart
+!
+! ------------------------------------------------------------------------------
+!
+!        subroutine BHDF_WRITE_RESTART: 
+!
+!       This subroutine receives a vector of properties and writes it in
+!       the same way an in-house code would.
+!
+        subroutine bhdf_write_restart
+        use CGNS
+        use HDF5
+        implicit none
+
+        end subroutine bhdf_write_restart
+!
+! ------------------------------------------------------------------------------
+!
+!        subroutine READ_MIXED_ELEMENTS: 
+!
+!        This subroutine reads an unstructured hdf cgns file and exports
+!        the necessary datastructures for an in-house CFD code.
+!
         subroutine read_mixed_elements
         use CGNS
         implicit none
