@@ -65,7 +65,9 @@
 !        subroutine READ_MIXED_ELEMENTS: 
 !
 !        This subroutine reads an unstructured hdf cgns file and exports
-!        the necessary datastructures for an in-house CFD code.
+!        the necessary datastructures for an in-house CFD code. This was
+!        adapted from the example code availiable in:
+!        ../CGNS/src/examples/fortran/Test_mixed_elements
 !
         subroutine read_mixed_elements
         use CGNS
