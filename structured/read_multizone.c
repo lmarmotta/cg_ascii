@@ -76,22 +76,21 @@ int main(void){
     for (int nz = 0; nz < nzone; nz++)
         printf("Block # %d has %d nodes in i and %d nodes in j.\n",nz,size_imax_z[nz],size_jmax_z[nz]);
 
-    /* Now, join everyone in one file. */
+    /* Export to see what happens. */
 
-    double x_grid[max_imax][max_jmax];  
-    double y_grid[max_imax][max_jmax];  
+    FILE * f_out = fopen("solution.dat", "w");
 
-    /* Zero out the vector. */
+    /* Check the condition of the pointer. */
 
-    for (int j = 0; j < max_imax; j++){
-        for (int i = 0; i < max_jmax; i++){
-
-            /* Separate the properties. */
-
-            x_grid[i][j] = 0.0; 
-            y_grid[i][j] = 0.0; 
-        }
+    if (f_out == NULL){
+        printf("\nERROR: Output file cannot be opened !\n"); exit(1);
     }
+
+    /* Print the header of the tecplot file. */
+
+    fprintf(f_out,"TITLE = \" multi-zone 01 \"\n");
+    fprintf(f_out,"VARIABLES = \"X\" , \"Y\" , \"Z\"\n");
+    fprintf(f_out,"ZONE T =\"Zone-one\", I= %d ,J= %d , K=1, DATAPACKING=POINT\n",max_imax, max_jmax);
 
     /* Ree-do the loop and get the coordinates. */
 
@@ -125,48 +124,20 @@ int main(void){
 
         printf("Reading coordinates at zone # %d\n",nz-1);
 
-        /* Store the mesh. Here the loop is overwriting the sections. This
-         * means that some changes shall be made. */
+        /* Export the file. */
 
         for (int i = 0; i<(int)isize[0][0]; i++){
             for (int j = 0; j<(int)isize[0][1]; j++){
-                x_grid[i][j] = x_aux[j][i];
-                y_grid[i][j] = y_aux[j][i];
+
+                printf(" Zone: %d | x coordinate: %lf | y coordinate %lf\n",nz,x_aux[i][j],y_aux[i][j]);
+
+                fprintf(f_out,"%lf %lf %lf\n",x_aux[j][i],y_aux[j][i],0.0);
             }
         }
     }
 
-    /* Export to see what happens. */
-
-    FILE * f_out = fopen("solution.dat", "w");
-
-    /* Check the condition of the pointer. */
-
-    if (f_out == NULL){
-        printf("\nERROR: Output file cannot be opened !\n"); exit(1);
-    }
-
-    /* Print the header of the tecplot file. */
-
-    fprintf(f_out,"TITLE = \" multi-zone 01 \"\n");
-    fprintf(f_out,"VARIABLES = \"X\" , \"Y\" , \"Z\"\n");
-    fprintf(f_out,"ZONE T =\"Zone-one\", I= %d ,J= %d , K=1, DATAPACKING=POINT\n",max_imax, max_jmax);
+    /* Close out file. */
     
-    for (int j = 0; j < max_imax; j++){
-        for (int i = 0; i < max_jmax; i++){
-
-            /* Separate the properties. */
-
-            double x = x_grid[i][j]; 
-            double y = y_grid[i][j]; 
-            double z = 0.0;
-
-            /* Dump solution. */
-
-            fprintf(f_out,"%lf %lf %lf\n",x, y, z);
-        }
-    }
-
     fclose(f_out);
 
     /* Close the cgns file. */
